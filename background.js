@@ -158,25 +158,6 @@ function hideLoadingIndicator() {
   chrome.action.setBadgeText({ text: '' });
 }
 
-// Update onExtensionClick to show the loading indicator
-async function onExtensionClick(tab) {
-  showLoadingIndicator();
-  const apiKey = await getApiKey();
-  if (apiKey) {
-    try {
-      await processTabContent(tab, apiKey);
-    } catch (error) {
-      console.error("Error processing tab content:", error);
-      notifyError('Please select some text on the page first!');
-    } finally {
-      hideLoadingIndicator();
-    }
-  } else {
-    hideLoadingIndicator();
-    promptForApiKey();
-  }
-}
-
 // This function retrieves the API key from Chrome's local storage.
 async function getApiKey() {
   const result = await chrome.storage.local.get(["apiKey"]);
