@@ -8,7 +8,7 @@ markmap:
   colorFreezeLevel: 2
 ---
 
-# markmap
+# title
 
 ## Links
 
@@ -45,7 +45,7 @@ async function onExtensionClick(tab) {
       await processTabContent(tab, apiKey);
     } catch (error) {
       console.error("Error processing tab content:", error);
-      notifyError('Please select some text on the page first!');
+      notifyError(error.message);
     }
   } else {
     promptForApiKey();
@@ -54,6 +54,7 @@ async function onExtensionClick(tab) {
 
 // This function processes the content of the tab and generates a mind map.
 async function processTabContent(tab, apiKey) {
+	showLoadingIndicator();
   const content = await extractPageContent(tab.id);
   if (content) {
     const mindmap = await generateMindmap(content, apiKey);
@@ -63,6 +64,7 @@ async function processTabContent(tab, apiKey) {
   } else {
     throw new Error('No content to summarize');
   }
+	hideLoadingIndicator();
 }
 
 // This function prompts the user to enter their API key.
@@ -123,7 +125,9 @@ async function generateMindmap(content, apiKey) {
 
   const data = await response.json();
 	console.log(data);
-  if (!data.choices || data.choices.length === 0) {
+	if (data.error) {
+		throw new Error(data.error.message);
+	} else if (!data.choices || data.choices.length === 0) {
     throw new Error('No mindmap received from GPT-4');
   }
 
@@ -178,21 +182,13 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "setApiKey") {
     promptForApiKey();
   } else if (info.menuItemId === "text2mindmap") {
-    showLoadingIndicator();
     chrome.storage.local.get(["apiKey"], async (result) => {
-      if (result.apiKey && tab) {
-        try {
-          await processTabContent(tab, result.apiKey);
-        } catch (error) {
-          console.error("Error summarizing content:", error);
-          notifyError('Please select some text on the page first!');
-        } finally {
-          hideLoadingIndicator();
-        }
-      } else {
-        hideLoadingIndicator();
-        promptForApiKey();
-      }
+      try {
+				await processTabContent(tab, result.apiKey);
+			} catch (error) {
+				console.error("Error processing tab content:", error);
+				notifyError(error.message);
+			}
     });
   }
 });

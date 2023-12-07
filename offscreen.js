@@ -19,7 +19,6 @@ async function downloadMindmap(data, filename) {
   try {
 		const blob = new Blob([data], { type: "text/markdown" });
 		const url = URL.createObjectURL(blob);
-
 		const link = document.createElement("a");
 		link.href = url;
 		link.download = filename;
